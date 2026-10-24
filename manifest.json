@@ -1,0 +1,32 @@
+{
+    "name": "graphql",
+    "version": "1.0.0",
+    "description": "GraphQL endpoint and schema registry for headless APIs",
+    "author": "BookOwl Team",
+    "namespace": "PrestoWorld\\Modules\\GraphQL",
+    "type": "route",
+    "priority": 60,
+    "enabled": true,
+    "entry": "Module.php",
+    "providers": [
+        "PrestoWorld\\Modules\\GraphQL\\Providers\\GraphQLServiceProvider"
+    ],
+    "config": [
+        "config/graphql.php"
+    ],
+    "migrations": [],
+    "route_prefix": "graphql",
+    "routes": [
+        {
+            "method": "POST",
+            "path": "",
+            "handler": ["PrestoWorld\\Modules\\GraphQL\\Http\\GraphQLController", "handle"]
+        }
+    ],
+    "dependencies": {},
+    "autoload": {
+        "psr-4": {
+            "PrestoWorld\\Modules\\GraphQL\\": "."
+        }
+    }
+}
