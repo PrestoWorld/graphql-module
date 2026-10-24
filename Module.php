@@ -33,7 +33,12 @@ class Module extends WitalsModule
 
     public function boot(): void
     {
-        //
+        $providers = $this->app->config('graphql.providers', []);
+        foreach ($providers as $provider) {
+            if (is_string($provider) && class_exists($provider)) {
+                \PrestoWorld\Modules\GraphQL\Providers\ProviderRegistry::register($provider);
+            }
+        }
     }
 
     public function getName(): string { return 'GraphQL'; }

@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace PrestoWorld\Modules\GraphQL\Http;
 
+use Nyholm\Psr7\Factory\Psr17Factory;
+use Nyholm\Psr7\Response;
 use PrestoWorld\Modules\GraphQL\Registry\SchemaRegistry;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
-use Witals\Framework\Http\Response;
 
 class GraphQLController
 {
@@ -24,11 +25,23 @@ class GraphQLController
             $schema = $this->registry->getSchema();
             $result = $this->execute($query, $variables, $schema);
 
-            return Response::json($result);
+            $factory = new Psr17Factory();
+            $psr7Response = new Response(
+                200,
+                ['Content-Type' => 'application/json'],
+                $factory->createStream(json_encode($result))
+            );
+            return $psr7Response;
         } catch (\Throwable $e) {
-            return Response::json([
-                'errors' => [['message' => $e->getMessage()]],
-            ], 500);
+            $factory = new Psr17Factory();
+            $psr7Response = new Response(
+                500,
+                ['Content-Type' => 'application/json'],
+                $factory->createStream(json_encode([
+                    'errors' => [['message' => $e->getMessage()]],
+                ]))
+            );
+            return $psr7Response;
         }
     }
 
