@@ -4,7 +4,7 @@
     "description": "GraphQL endpoint and schema registry for headless APIs",
     "author": "BookOwl Team",
     "namespace": "PrestoWorld\\Modules\\GraphQL",
-    "type": "route",
+    "type": "support",
     "priority": 60,
     "enabled": true,
     "entry": "Module.php",
