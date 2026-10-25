@@ -1,4 +1,5 @@
 {
+    "$schema": "https://prestoworld.pages.dev/schemas/module-manifest/v1.json",
     "name": "graphql",
     "version": "1.0.0",
     "description": "GraphQL endpoint and schema registry for headless APIs",
@@ -20,10 +21,13 @@
         {
             "method": "POST",
             "path": "",
-            "handler": ["PrestoWorld\\Modules\\GraphQL\\Http\\GraphQLController", "handle"]
+            "handler": [
+                "PrestoWorld\\Modules\\GraphQL\\Http\\GraphQLController",
+                "handle"
+            ]
         }
     ],
-    "dependencies": {},
+    "dependencies": [],
     "autoload": {
         "psr-4": {
             "PrestoWorld\\Modules\\GraphQL\\": "."
