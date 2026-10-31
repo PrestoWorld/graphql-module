@@ -29,6 +29,16 @@ class FeedProvider implements ProviderInterface
                     'embed_url' => ['type' => 'String'],
                     'thumbnail_url' => ['type' => 'String'],
                     'payload' => ['type' => 'JSON'],
+                    'comments' => ['type' => '[Comment]'],
+                ],
+            ],
+            'Comment' => [
+                'fields' => [
+                    'id' => ['type' => 'ID'],
+                    'content' => ['type' => 'String'],
+                    'timeAgo' => ['type' => 'String'],
+                    'createdAt' => ['type' => 'String'],
+                    'author' => ['type' => 'Author'],
                 ],
             ],
             'Author' => [
@@ -89,6 +99,28 @@ class FeedProvider implements ProviderInterface
                         return $feed->home();
                     }
                     return ['greeting' => '', 'posts' => []];
+                },
+            ],
+            'status' => [
+                'type' => 'Post',
+                'args' => ['id' => ['type' => 'ID!']],
+                'resolve' => function ($root, $args) use ($feed) {
+                    $id = (string) ($args['id'] ?? '');
+                    if ($feed instanceof FeedDataProvider) {
+                        return $feed->findStatus($id);
+                    }
+                    return null;
+                },
+            ],
+            'comments' => [
+                'type' => '[Comment]',
+                'args' => ['postId' => ['type' => 'ID!']],
+                'resolve' => function ($root, $args) use ($feed) {
+                    $postId = (string) ($args['postId'] ?? '');
+                    if ($feed instanceof FeedDataProvider) {
+                        return $feed->commentsForStatus($postId);
+                    }
+                    return [];
                 },
             ],
         ];
