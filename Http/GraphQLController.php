@@ -4,20 +4,40 @@ declare(strict_types=1);
 
 namespace PrestoWorld\Modules\GraphQL\Http;
 
-use Nyholm\Psr7\Factory\Psr17Factory;
-use Nyholm\Psr7\Response;
 use PrestoWorld\Modules\GraphQL\Registry\SchemaRegistry;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use Nyholm\Psr7\Factory\Psr17Factory;
+use Nyholm\Psr7\Response as Psr7Response;
+use Witals\Framework\Http\Response as FrameworkResponse;
 
 class GraphQLController
 {
     public function __construct(private SchemaRegistry $registry) {}
 
-    public function handle(ServerRequestInterface $request): ResponseInterface
+    /**
+     * @return FrameworkResponse|ResponseInterface
+     */
+    public function handle(mixed $request)
     {
-        $body = (string) $request->getBody();
+        $isPsr7 = $request instanceof ServerRequestInterface;
+        $body = $isPsr7
+            ? (string) $request->getBody()
+            : (string) (method_exists($request, 'body') ? $request->body() : '');
         $data = json_decode($body, true) ?? [];
+        if ($data === [] && method_exists($request, 'getJson')) {
+            $json = $request->getJson();
+            if (is_array($json)) {
+                $data = $json;
+            }
+        }
+        if ($data === [] && !$isPsr7 && method_exists($request, 'post')) {
+            $post = $request->post();
+            if (is_array($post) && $post !== []) {
+                $data = $post;
+            }
+        }
+
         $query = (string) ($data['query'] ?? '');
         $variables = is_array($data['variables'] ?? null) ? $data['variables'] : [];
 
@@ -25,23 +45,29 @@ class GraphQLController
             $schema = $this->registry->getSchema();
             $result = $this->execute($query, $variables, $schema);
 
-            $factory = new Psr17Factory();
-            $psr7Response = new Response(
-                200,
-                ['Content-Type' => 'application/json'],
-                $factory->createStream(json_encode($result))
-            );
-            return $psr7Response;
+            if ($isPsr7) {
+                $factory = new Psr17Factory();
+                return new Psr7Response(
+                    200,
+                    ['Content-Type' => 'application/json'],
+                    $factory->createStream(json_encode($result, JSON_UNESCAPED_UNICODE))
+                );
+            }
+
+            return FrameworkResponse::json($result, 200);
         } catch (\Throwable $e) {
-            $factory = new Psr17Factory();
-            $psr7Response = new Response(
-                500,
-                ['Content-Type' => 'application/json'],
-                $factory->createStream(json_encode([
-                    'errors' => [['message' => $e->getMessage()]],
-                ]))
-            );
-            return $psr7Response;
+            $error = ['errors' => [['message' => $e->getMessage()]]];
+
+            if ($isPsr7) {
+                $factory = new Psr17Factory();
+                return new Psr7Response(
+                    500,
+                    ['Content-Type' => 'application/json'],
+                    $factory->createStream(json_encode($error, JSON_UNESCAPED_UNICODE))
+                );
+            }
+
+            return FrameworkResponse::json($error, 500);
         }
     }
 
@@ -59,8 +85,14 @@ class GraphQLController
             if ($argStr !== '' && preg_match('/limit\s*:\s*(\d+)/i', $argStr, $lm)) {
                 $args['limit'] = (int) $lm[1];
             }
+            if ($argStr !== '' && preg_match('/offset\s*:\s*(\d+)/i', $argStr, $om)) {
+                $args['offset'] = (int) $om[1];
+            }
             if (isset($variables['limit'])) {
                 $args['limit'] = (int) $variables['limit'];
+            }
+            if (isset($variables['offset'])) {
+                $args['offset'] = (int) $variables['offset'];
             }
             if (isset($queries['feed'])) {
                 $resolver = $queries['feed']['resolve'] ?? null;

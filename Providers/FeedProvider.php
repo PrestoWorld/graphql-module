@@ -83,11 +83,15 @@ class FeedProvider implements ProviderInterface
         return [
             'feed' => [
                 'type' => '[Post]',
-                'args' => ['limit' => ['type' => 'Int', 'default' => 10]],
+                'args' => [
+                    'limit' => ['type' => 'Int', 'default' => 10],
+                    'offset' => ['type' => 'Int', 'default' => 0],
+                ],
                 'resolve' => function ($root, $args) use ($feed) {
                     $limit = (int) ($args['limit'] ?? 10);
+                    $offset = (int) ($args['offset'] ?? 0);
                     if ($feed instanceof FeedDataProvider) {
-                        return $feed->feed($limit);
+                        return $feed->feed($limit, $offset);
                     }
                     return [];
                 },
